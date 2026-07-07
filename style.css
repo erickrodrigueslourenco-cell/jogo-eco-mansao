@@ -1,80 +1,28 @@
-/* Reset básico e definição da fonte */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+#tecnologias table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #ffffff;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    overflow: hidden;
 }
 
-body {
-  font-family: 'Poppins', sans-serif;
-  background-color: #121814; /* Fundo grafite bem escuro com toque verde */
-  color: #e2e8f0;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px;
+#tecnologias th {
+    background-color: #1e824c; /* Verde escuro tecnológico */
+    color: white;
+    text-align: left;
+    padding: 15px;
+    font-weight: 600;
 }
 
-/* Cabeçalho */
-.game-header {
-  text-align: center;
-  margin-bottom: 20px;
+#tecnologias td {
+    padding: 15px;
+    border-bottom: 1px solid #eef2f3;
+    color: #333;
 }
 
-.game-header h1 {
-  font-size: 2.5rem;
-  color: #4ade80; /* Verde Eco brilhante */
-  font-weight: 700;
-}
-
-.game-header h1 span {
-  font-size: 1rem;
-  background: #22c55e;
-  color: #121814;
-  padding: 3px 8px;
-  border-radius: 4px;
-  vertical-align: middle;
-  margin-left: 10px;
-}
-
-.game-header p {
-  color: #94a3b8;
-  margin-top: 5px;
-  font-size: 0.95rem;
-}
-
-/* Container do Jogo */
-.game-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
-  max-width: 900px;
-}
-
-/* Moldura e efeito neon no Canvas */
-.canvas-wrapper {
-  background: #1e293b;
-  padding: 12px;
-  border-radius: 16px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 
-              0 0 30px rgba(74, 222, 128, 0.15); /* Brilho verde sutil */
-  border: 2px solid #2e3e35;
-}
-
-canvas {
-  display: block;
-  background-color: #000; /* Fundo padrão interno do canvas */
-  border-radius: 8px;
-  max-width: 100%; /* Torna o canvas responsivo em telas menores */
-  height: auto;
-}
-
-/* Rodapé */
-.game-footer {
-  margin-top: 20px;
-  font-size: 0.8rem;
-  color: #64748b;
+#tecnologias tr:hover {
+    background-color: #f1f9f5; /* Efeito visual ao passar o mouse */
 }
