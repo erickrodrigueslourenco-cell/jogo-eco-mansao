@@ -1,327 +1,99 @@
-// ==========================
-// UTILITÁRIOS
-// ==========================
-function clamp(value, min, max) {
-  return Math.max(min, Math.min(max, value));
-}
+// 1. Configuração Inicial do Canvas
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
 
-function AABB(a, b) {
-  return (
-    a.x < b.x + b.w &&
-    a.x + a.w > b.x &&
-    a.y < b.y + b.h &&
-    a.y + a.h > b.y
-  );
-}
+// 2. Estado do Jogo (Configurações do Jogador e Cenário)
+const player = {
+  x: 100,
+  y: 100,
+  size: 30,
+  speed: 5,
+  color: "#4ade80" // Verde eco brilhante combinando com o CSS
+};
 
-// ==========================
-// PARTÍCULAS
-// ==========================
-class Particle {
-  constructor(x, y, color) {
-    this.x = x;
-    this.y = y;
-    this.vx = (Math.random() - 0.5) * 3;
-    this.vy = (Math.random() - 0.5) * 3;
-    this.life = 30;
-    this.color = color;
+// Objeto para monitorar as teclas pressionadas
+const keys = {
+  ArrowUp: false,
+  ArrowDown: false,
+  ArrowLeft: false,
+  ArrowRight: false
+};
+
+// 3. Captura de Movimentos (Event Listeners)
+window.addEventListener("keydown", (e) => {
+  if (e.key in keys) {
+    keys[e.key] = true;
+    e.preventDefault(); // Evita que a página role ao usar as setas
   }
+});
 
-  update() {
-    this.x += this.vx;
-    this.y += this.vy;
-    this.life--;
+window.addEventListener("keyup", (e) => {
+  if (e.key in keys) {
+    keys[e.key] = false;
   }
+});
 
-  draw(ctx) {
-    ctx.fillStyle = this.color;
-    ctx.fillRect(this.x, this.y, 3, 3);
+// 4. Lógica de Atualização (Movimento e Colisões)
+function update() {
+  if (keys.ArrowUp && player.y > 0) {
+    player.y -= player.speed;
   }
-}
-
-// ==========================
-// PLAYER
-// ==========================
-class Player {
-  constructor(x, y) {
-    this.x = x;
-    this.y = y;
-    this.w = 28;
-    this.h = 28;
-
-    this.vx = 0;
-    this.vy = 0;
-
-    this.speed = 0.6;
-    this.baseSpeed = 0.6;
-
-    this.gravity = 0.6;
-    this.friction = 0.85;
-
-    this.jumpPower = -10;
-    this.canJump = false;
-    this.jumpCount = 0;
-
-    this.wallJumpDir = 0;
-
-    this.dashCooldown = 0;
-    this.onGround = false;
-
-    this.combo = 0;
-    this.comboTimer = 0;
-
-    this.water = 0;
+  if (keys.ArrowDown && player.y < canvas.height - player.size) {
+    player.y += player.speed;
   }
-
-  update(input, platforms) {
-    // peso do balde
-    this.speed = this.baseSpeed * (this.water >= 50 ? 0.8 : 1);
-
-    // movimento horizontal
-    if (input.left) this.vx -= this.speed;
-    if (input.right) this.vx += this.speed;
-
-    // gravidade
-    this.vy += this.gravity;
-
-    // dash
-    if (input.dash && this.dashCooldown <= 0) {
-      this.vx = input.lastDir * 8;
-      this.vy = 0;
-      this.dashCooldown = 25;
-    }
-
-    if (this.dashCooldown > 0) this.dashCooldown--;
-
-    // pulo duplo
-    if (input.jumpPressed) {
-      if (this.onGround || this.jumpCount < 2) {
-        this.vy = this.jumpPower;
-        this.jumpCount++;
-      }
-    }
-
-    // física
-    this.x += this.vx;
-    this.y += this.vy;
-
-    this.vx *= this.friction;
-
-    this.onGround = false;
-
-    // colisões
-    for (let p of platforms) {
-      if (AABB(this, p)) {
-        // chão
-        if (this.vy > 0 && this.y < p.y) {
-          this.y = p.y - this.h;
-          this.vy = 0;
-          this.onGround = true;
-          this.jumpCount = 0;
-
-          // reset combo ao tocar chão
-          this.combo = 0;
-        }
-
-        // parede simples
-        if (this.x < p.x) {
-          this.x = p.x - this.w;
-        } else if (this.x > p.x) {
-          this.x = p.x + p.w;
-        }
-
-        // óleo (fricção reduzida)
-        if (p.type === "oil") {
-          this.friction = 0.95;
-        } else {
-          this.friction = 0.85;
-        }
-      }
-    }
-
-    // combo decay
-    if (this.comboTimer > 0) this.comboTimer--;
-    else this.combo = 0;
+  if (keys.ArrowLeft && player.x > 0) {
+    player.x -= player.speed;
   }
-
-  draw(ctx) {
-    // squash & stretch
-    let stretchY = this.vy < 0 ? 1.2 : this.onGround ? 0.8 : 1;
-
-    ctx.fillStyle = "#7c4dff";
-    ctx.fillRect(
-      this.x,
-      this.y,
-      this.w,
-      this.h * stretchY
-    );
+  if (keys.ArrowRight && player.x < canvas.width - player.size) {
+    player.x += player.speed;
   }
 }
 
-// ==========================
-// ENEMY
-// ==========================
-class Enemy {
-  constructor(x, y) {
-    this.x = x;
-    this.y = y;
-    this.w = 26;
-    this.h = 26;
-    this.vx = 2;
-    this.vy = 0;
-    this.alive = true;
+// 5. Renderização Visual (Desenhar na tela)
+function draw() {
+  // Limpa o canvas a cada frame com um fundo grafite elegante
+  ctx.fillStyle = "#1e293b";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Desenha uma grade de fundo sutil (estilo linhas de guia)
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.03)";
+  ctx.lineWidth = 1;
+  for (let i = 0; i < canvas.width; i += 40) {
+    ctx.beginPath();
+    ctx.moveTo(i, 0);
+    ctx.lineTo(i, canvas.height);
+    ctx.stroke();
+  }
+  for (let j = 0; j < canvas.height; j += 40) {
+    ctx.beginPath();
+    ctx.moveTo(0, j);
+    ctx.lineTo(canvas.width, j);
+    ctx.stroke();
   }
 
-  update(platforms) {
-    this.vy += 0.5;
-    this.x += this.vx;
-    this.y += this.vy;
+  // Desenha o Jogador (com bordas arredondadas e sombra)
+  ctx.fillStyle = player.color;
+  ctx.shadowBlur = 15;
+  ctx.shadowColor = player.color; // Efeito neon
+  
+  // Desenha um quadrado para o jogador (pode ser substituído por uma imagem depois)
+  ctx.fillRect(player.x, player.y, player.size, player.size);
+  
+  // Reseta a sombra para não afetar outros elementos
+  ctx.shadowBlur = 0;
 
-    for (let p of platforms) {
-      if (AABB(this, p)) {
-        this.vy = 0;
-        this.y = p.y - this.h;
-      }
-    }
-
-    if (this.x < 0 || this.x > 800) this.vx *= -1;
-  }
-
-  draw(ctx) {
-    if (!this.alive) return;
-    ctx.fillStyle = "#00c853";
-    ctx.fillRect(this.x, this.y, this.w, this.h);
-  }
+  // Texto temporário de interface (UI)
+  ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
+  ctx.font = "16px 'Poppins', sans-serif";
+  ctx.fillText(`Posição X: ${Math.round(player.x)} | Y: ${Math.round(player.y)}`, 20, 30);
 }
 
-// ==========================
-// PLATAFORMA
-// ==========================
-class Platform {
-  constructor(x, y, w, h, type = "normal") {
-    this.x = x;
-    this.y = y;
-    this.w = w;
-    this.h = h;
-    this.type = type;
-  }
-
-  draw(ctx) {
-    ctx.fillStyle =
-      this.type === "oil" ? "#3b2f2f" :
-      this.type === "switch" ? "#ffd54f" :
-      this.type === "goal" ? "#4fc3f7" :
-      "#2e7d32";
-
-    ctx.fillRect(this.x, this.y, this.w, this.h);
-  }
+// 6. Loop Principal do Jogo
+function gameLoop() {
+  update();
+  draw();
+  requestAnimationFrame(gameLoop);
 }
 
-// ==========================
-// GAME
-// ==========================
-class Game {
-  constructor() {
-    this.canvas = document.getElementById("game");
-    this.ctx = this.canvas.getContext("2d");
-
-    this.player = new Player(50, 400);
-
-    this.platforms = [
-      new Platform(0, 580, 800, 20),
-      new Platform(200, 450, 120, 15),
-      new Platform(400, 380, 120, 15, "oil"),
-      new Platform(600, 320, 120, 15),
-      new Platform(750, 250, 40, 300, "goal")
-    ];
-
-    this.enemies = [
-      new Enemy(250, 300)
-    ];
-
-    this.particles = [];
-
-    this.input = {
-      left: false,
-      right: false,
-      jumpPressed: false,
-      dash: false,
-      lastDir: 1
-    };
-
-    this.setupInput();
-    this.loop();
-  }
-
-  setupInput() {
-    window.addEventListener("keydown", (e) => {
-      if (e.code === "ArrowLeft") this.input.left = true;
-      if (e.code === "ArrowRight") this.input.right = true;
-      if (e.code === "Space") this.input.jumpPressed = true;
-      if (e.code === "KeyX") this.input.dash = true;
-    });
-
-    window.addEventListener("keyup", (e) => {
-      if (e.code === "ArrowLeft") this.input.left = false;
-      if (e.code === "ArrowRight") this.input.right = false;
-      if (e.code === "Space") this.input.jumpPressed = false;
-      if (e.code === "KeyX") this.input.dash = false;
-    });
-  }
-
-  spawnParticles(x, y, color) {
-    for (let i = 0; i < 10; i++) {
-      this.particles.push(new Particle(x, y, color));
-    }
-  }
-
-  update() {
-    this.player.update(this.input, this.platforms);
-
-    for (let e of this.enemies) {
-      e.update(this.platforms);
-
-      // bottom bounce
-      if (AABB(this.player, e) && this.player.vy > 0) {
-        e.alive = false;
-        this.player.vy = -8;
-        this.player.combo += 5;
-        this.spawnParticles(e.x, e.y, "#00e676");
-      }
-    }
-
-    // partículas
-    this.particles = this.particles.filter(p => p.life > 0);
-    this.particles.forEach(p => p.update());
-
-    // direção
-    if (this.input.left) this.input.lastDir = -1;
-    if (this.input.right) this.input.lastDir = 1;
-  }
-
-  draw() {
-    this.ctx.clearRect(0, 0, 800, 600);
-
-    for (let p of this.platforms) p.draw(this.ctx);
-    for (let e of this.enemies) e.draw(this.ctx);
-
-    this.player.draw(this.ctx);
-
-    for (let p of this.particles) p.draw(this.ctx);
-
-    // UI combo
-    this.ctx.fillStyle = "white";
-    this.ctx.fillText("Combo: " + this.player.combo, 20, 20);
-  }
-
-  loop() {
-    this.update();
-    this.draw();
-    requestAnimationFrame(() => this.loop());
-  }
-}
-
-// ==========================
-// START
-// ==========================
-new Game();
+// Inicializa o jogo
+gameLoop();
